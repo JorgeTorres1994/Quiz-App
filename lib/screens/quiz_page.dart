@@ -74,29 +74,12 @@ class _QuizPageState extends State<QuizPage> {
     });
   }
 
-  /*void _showResult() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Resultado"),
-        content: Text("Puntaje final: $_score de ${_questions.length}"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
-            child: const Text("Volver"),
-          )
-        ],
-      ),
-    );
-  }*/
-
   void _showResult() async {
     final questionCount = _questions.length;
     final category = widget.category;
 
     await FirebaseFirestore.instance.collection('results').add({
-      'user_id':
-          'anon', // Puedes usar FirebaseAuth.instance.currentUser?.uid si tienes auth real
+      'user_id': 'anon',
       'score': _score,
       'total': questionCount,
       'category_id': category.id,
@@ -108,13 +91,13 @@ class _QuizPageState extends State<QuizPage> {
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
-        title: const Text("Resultado"),
-        content: Text("Puntaje final: $_score de $questionCount"),
+        title: const Text("🎉 Resultado"),
+        content: Text("Tu puntaje final es $_score de $questionCount."),
         actions: [
           TextButton(
             onPressed: () =>
                 Navigator.popUntil(context, (route) => route.isFirst),
-            child: const Text("Volver"),
+            child: const Text("Volver al inicio"),
           ),
         ],
       ),
@@ -130,52 +113,105 @@ class _QuizPageState extends State<QuizPage> {
   @override
   Widget build(BuildContext context) {
     if (_questions.isEmpty) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        backgroundColor: Color(0xFFF4F3FA),
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
     final question = _questions[_currentIndex];
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF4F3FA),
       appBar: AppBar(
-        title: Text("Pregunta ${_currentIndex + 1}/${_questions.length}"),
+        title: Text(
+          "Pregunta ${_currentIndex + 1} de ${_questions.length}",
+          style: const TextStyle(fontSize: 18),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF6C63FF),
+        elevation: 3,
         actions: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Center(child: Text("⏱ $_timeLeft s")),
+            child: Center(
+              child: Text(
+                "⏱ $_timeLeft s",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(4.0),
+          child: LinearProgressIndicator(
+            value: _timeLeft / 10,
+            color: Colors.pinkAccent,
+            backgroundColor: Colors.white,
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              question.text,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 24),
-            ...question.options.map((opt) {
-              final isCorrect = opt == question.correctAnswer;
-              final isSelected = opt == _selectedOption;
-              final showColor = _answered && isSelected;
-              final color = showColor
-                  ? (isCorrect ? Colors.green : Colors.red)
-                  : Colors.grey[200];
-
-              return Container(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: color,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  question.text,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF3D3A5A),
                   ),
-                  onPressed: _answered ? null : () => _handleAnswer(opt),
-                  child: Text(opt),
                 ),
-              );
-            }),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: ListView.builder(
+                itemCount: question.options.length,
+                itemBuilder: (context, index) {
+                  final opt = question.options[index];
+                  final isCorrect = opt == question.correctAnswer;
+                  final isSelected = opt == _selectedOption;
+                  final showColor = _answered && isSelected;
+                  final backgroundColor = showColor
+                      ? (isCorrect ? Colors.green[300] : Colors.red[300])
+                      : Colors.white;
+
+                  return Container(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: backgroundColor,
+                        foregroundColor: const Color(0xFF3D3A5A),
+                        elevation: 2,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: _answered ? null : () => _handleAnswer(opt),
+                      child: Text(
+                        opt,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),

@@ -24,7 +24,18 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Selecciona una categoría")),
+      backgroundColor: const Color(0xFFF4F3FA),
+      appBar: AppBar(
+        title: const Text("🧠 Quiz App"),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF6C63FF),
+        elevation: 3,
+        titleTextStyle: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
       body: FutureBuilder<List<CategoryModel>>(
         future: _future,
         builder: (context, snapshot) {
@@ -42,41 +53,14 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.all(16),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.8,
+              childAspectRatio: 0.70,
               mainAxisSpacing: 16,
               crossAxisSpacing: 16,
             ),
             itemCount: categories.length,
             itemBuilder: (_, index) {
               final cat = categories[index];
-              /*return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => QuizPage(category: cat),
-                    ),
-                  );
-                },
 
-                child: Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Image.network(cat.imageUrl, fit: BoxFit.cover),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(cat.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      Text(cat.description, style: const TextStyle(fontSize: 12)),
-                    ],
-                  ),
-                ),
-              );*/
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -84,52 +68,97 @@ class _HomePageState extends State<HomePage> {
                     MaterialPageRoute(builder: (_) => QuizPage(category: cat)),
                   );
                 },
-                child: Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 6,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(
-                        child: Image.network(
-                          cat.imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              const Icon(Icons.broken_image, size: 64),
+                      ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                        child: AspectRatio(
+                          aspectRatio: 1.6,
+                          child: Image.network(
+                            cat.imageUrl,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => const Center(
+                              child: Icon(Icons.broken_image, size: 40),
+                            ),
+                          ),
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          children: [
-                            Text(
-                              cat.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                cat.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Color(0xFF3D3A5A),
+                                ),
                               ),
-                            ),
-                            Text(
-                              cat.description,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            const SizedBox(height: 8),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => RankingPage(
-                                      categoryId: cat.id,
-                                      categoryName: cat.name,
+                              const SizedBox(height: 4),
+                              Text(
+                                cat.description,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF7E7C9C),
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const Spacer(),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => RankingPage(
+                                          categoryId: cat.id,
+                                          categoryName: cat.name,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFE25D9B),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
                                     ),
                                   ),
-                                );
-                              },
-                              child: const Text("Ver Ranking"),
-                            ),
-                          ],
+                                  child: const Text(
+                                    "Ver Ranking",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
