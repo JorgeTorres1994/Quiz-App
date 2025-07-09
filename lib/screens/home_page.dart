@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:quiz_app/screens/quiz_page.dart';
 import 'package:quiz_app/screens/ranking_page.dart';
@@ -35,7 +36,18 @@ class _HomePageState extends State<HomePage> {
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Cerrar sesión',
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              // No necesitas Navigator, volverá automáticamente a LoginRegisterPage
+            },
+          ),
+        ],
       ),
+
       body: FutureBuilder<List<CategoryModel>>(
         future: _future,
         builder: (context, snapshot) {

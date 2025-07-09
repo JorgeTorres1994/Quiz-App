@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/category_model.dart';
 import '../models/question_model.dart';
@@ -78,8 +79,15 @@ class _QuizPageState extends State<QuizPage> {
     final questionCount = _questions.length;
     final category = widget.category;
 
+    final user = FirebaseAuth.instance.currentUser;
+    final isAnon = user?.isAnonymous ?? true;
+    final uid = user?.uid ?? 'anon';
+    final name = isAnon ? 'anon' : (user?.email ?? 'Usuario');
+
     await FirebaseFirestore.instance.collection('results').add({
-      'user_id': 'anon',
+      'user_id': uid,
+      'user_name': name,
+      'is_anonymous': isAnon,
       'score': _score,
       'total': questionCount,
       'category_id': category.id,

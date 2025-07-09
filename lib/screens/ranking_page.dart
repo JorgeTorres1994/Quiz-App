@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class RankingPage extends StatelessWidget {
@@ -13,6 +14,10 @@ class RankingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final currentUid = currentUser?.uid ?? '';
+    final isAnon = FirebaseAuth.instance.currentUser?.isAnonymous ?? true;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF4F3FA),
       appBar: AppBar(
@@ -26,7 +31,6 @@ class RankingPage extends StatelessWidget {
             .collection('results')
             .where('category_id', isEqualTo: categoryId)
             .orderBy('score', descending: true)
-            .limit(10)
             .get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -42,73 +46,155 @@ class RankingPage extends StatelessWidget {
             );
           }
 
-          final docs = snapshot.data?.docs ?? [];
+          final allDocs = snapshot.data?.docs ?? [];
 
-          if (docs.isEmpty) {
-            return const Center(
-              child: Text(
-                "📭 Aún no hay resultados.",
-                style: TextStyle(fontSize: 16),
-              ),
-            );
+          // Filtrar si el usuario NO es anónimo
+          /*final filteredDocs = isAnon
+              ? allDocs
+              : allDocs.where((doc) => doc['is_anonymous'] == false).toList();*/
+
+          final filteredDocs = allDocs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return data.containsKey('is_anonymous')
+                ? (isAnon ? true : data['is_anonymous'] == false)
+                : false; // ignora los que no tienen el campo
+          }).toList();
+
+          if (filteredDocs.isEmpty) {
+            return const Center(child: Text("📭 Aún no hay resultados."));
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: docs.length,
-            itemBuilder: (_, index) {
-              final data = docs[index];
-              final score = data['score'];
-              final total = data['total'];
-              final user = data['user_id'];
-              final percent = ((score / total) * 100).toStringAsFixed(1);
+          int? myPosition;
+          QueryDocumentSnapshot? myDoc;
+          for (int i = 0; i < filteredDocs.length; i++) {
+            if (filteredDocs[i]['user_id'] == currentUid) {
+              myPosition = i + 1;
+              myDoc = filteredDocs[i];
+              break;
+            }
+          }
 
-              Icon? medal;
-              switch (index) {
-                case 0:
-                  medal = const Icon(Icons.emoji_events, color: Colors.amber, size: 32);
-                  break;
-                case 1:
-                  medal = const Icon(Icons.emoji_events, color: Colors.grey, size: 28);
-                  break;
-                case 2:
-                  medal = const Icon(Icons.emoji_events, color: Colors.brown, size: 28);
-                  break;
-              }
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredDocs.length > 10
+                      ? 10
+                      : filteredDocs.length,
+                  itemBuilder: (_, index) {
+                    final data = filteredDocs[index];
+                    final score = data['score'];
+                    final total = data['total'];
+                    final uid = data['user_id'];
+                    final name = data['user_name'] ?? 'Usuario';
+                    final percent = ((score / total) * 100).toStringAsFixed(1);
+                    final isCurrent = uid == currentUid;
 
-              return Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                margin: const EdgeInsets.only(bottom: 16),
-                child: ListTile(
-                  leading: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: const Color(0xFF6C63FF),
-                        radius: 24,
-                        child: Text(
-                          "${index + 1}",
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    Icon? medal;
+                    switch (index) {
+                      case 0:
+                        medal = const Icon(
+                          Icons.emoji_events,
+                          color: Colors.amber,
+                          size: 32,
+                        );
+                        break;
+                      case 1:
+                        medal = const Icon(
+                          Icons.emoji_events,
+                          color: Colors.grey,
+                          size: 28,
+                        );
+                        break;
+                      case 2:
+                        medal = const Icon(
+                          Icons.emoji_events,
+                          color: Colors.brown,
+                          size: 28,
+                        );
+                        break;
+                    }
+
+                    return Card(
+                      color: isCurrent ? Colors.deepPurple.shade50 : null,
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: ListTile(
+                        leading: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: const Color(0xFF6C63FF),
+                              radius: 24,
+                              child: Text(
+                                "${index + 1}",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            if (medal != null)
+                              Positioned(top: -2, right: -2, child: medal),
+                          ],
+                        ),
+                        title: Text(
+                          isCurrent ? "👤 Tú ($name)" : "👤 $name",
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          "📊 Puntaje: $score / $total   (${percent}%)",
                         ),
                       ),
-                      if (medal != null)
-                        Positioned(
-                          top: -2,
-                          right: -2,
-                          child: medal,
-                        ),
-                    ],
-                  ),
-                  title: Text(
-                    "👤 Usuario: $user",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text("📊 Puntaje: $score / $total   (${percent}%)"),
-                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+              if (myPosition != null && myPosition > 10 && myDoc != null) ...[
+                const Divider(),
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Text(
+                    "📌 Tu posición",
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Card(
+                  color: Colors.deepPurple.shade100,
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: const Color(0xFF6C63FF),
+                      child: Text(
+                        "$myPosition",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    title: Text("👤 Tú (${myDoc['user_name'] ?? 'Usuario'})"),
+                    subtitle: Text(
+                      "📊 Puntaje: ${myDoc['score']} / ${myDoc['total']}   (${((myDoc['score'] / myDoc['total']) * 100).toStringAsFixed(1)}%)",
+                    ),
+                  ),
+                ),
+              ],
+            ],
           );
         },
       ),
